@@ -54,7 +54,7 @@ jobs:
           mkdir -p android/app/src/main/jniLibs
           cargo ndk \
             -t x86_64 \
-            -p ${ANDROID_PLATFORM} \
+            -P ${ANDROID_PLATFORM} \
             -o android/app/src/main/jniLibs \
             build --release
 
