@@ -9,10 +9,10 @@ use std::{
 };
 
 #[unsafe(no_mangle)]
-pub extern "system" fn Java_com_example_waydroidvulkan_MainActivity_getVulkanReport(
-    mut env: JNIEnv,
-    _class: JClass,
-) -> JString<'_> {
+pub extern "system" fn Java_com_example_waydroidvulkan_MainActivity_getVulkanReport<'local>(
+    env: JNIEnv<'local>,
+    _class: JClass<'local>,
+) -> JString<'local> {
     let report = match inspect_vulkan() {
         Ok(report) => report,
         Err(error) => format!(
@@ -94,7 +94,8 @@ fn inspect_vulkan() -> Result<String, String> {
         .engine_version(vk::make_api_version(0, 1, 0, 0))
         .api_version(loader_version);
 
-    let instance_info = vk::InstanceCreateInfo::default().application_info(&app_info);
+    let instance_info = vk::InstanceCreateInfo::default()
+        .application_info(&app_info);
 
     let instance = unsafe { entry.create_instance(&instance_info, None) }
         .map_err(|e| format!("vkCreateInstance failed: {e:?}"))?;
@@ -132,15 +133,30 @@ fn inspect_device(
     index: usize,
     out: &mut String,
 ) -> Result<(), String> {
-    let properties = unsafe { instance.get_physical_device_properties(device) };
-    let features = unsafe { instance.get_physical_device_features(device) };
-    let memory = unsafe { instance.get_physical_device_memory_properties(device) };
-    let queues = unsafe { instance.get_physical_device_queue_family_properties(device) };
+    let properties = unsafe {
+        instance.get_physical_device_properties(device)
+    };
+
+    let features = unsafe {
+        instance.get_physical_device_features(device)
+    };
+
+    let memory = unsafe {
+        instance.get_physical_device_memory_properties(device)
+    };
+
+    let queues = unsafe {
+        instance.get_physical_device_queue_family_properties(device)
+    };
 
     let extensions = unsafe {
         instance
             .enumerate_device_extension_properties(device)
-            .map_err(|e| format!("device extension enumeration failed: {e:?}"))?
+            .map_err(|e| {
+                format!(
+                    "device extension enumeration failed: {e:?}"
+                )
+            })?
     };
 
     let name = cstr(properties.device_name.as_ptr());
@@ -150,7 +166,9 @@ fn inspect_device(
         "══════════════════════════════════════════════"
     )
     .unwrap();
+
     writeln!(out, "GPU #{index}").unwrap();
+
     writeln!(
         out,
         "══════════════════════════════════════════════"
@@ -158,30 +176,35 @@ fn inspect_device(
     .unwrap();
 
     writeln!(out, "Name                     : {name}").unwrap();
+
     writeln!(
         out,
         "Vendor ID                : 0x{:04x}",
         properties.vendor_id
     )
     .unwrap();
+
     writeln!(
         out,
         "Device ID                : 0x{:04x}",
         properties.device_id
     )
     .unwrap();
+
     writeln!(
         out,
         "Device Type              : {:?}",
         properties.device_type
     )
     .unwrap();
+
     writeln!(
         out,
         "API Version              : {}",
         vk_version(properties.api_version)
     )
     .unwrap();
+
     writeln!(
         out,
         "Driver Version           : {}",
@@ -195,10 +218,11 @@ fn inspect_device(
      * ------------------------------------------------------------
      */
 
-    let has_driver_properties = has_extension(
-        &extensions,
-        "VK_KHR_driver_properties",
-    );
+    let has_driver_properties =
+        has_extension(
+            &extensions,
+            "VK_KHR_driver_properties",
+        );
 
     writeln!(out, "\nDRIVER PROPERTIES").unwrap();
     writeln!(out, "-----------------").unwrap();
@@ -212,7 +236,10 @@ fn inspect_device(
                 .push_next(&mut driver_properties);
 
         unsafe {
-            instance.get_physical_device_properties2(device, &mut properties2);
+            instance.get_physical_device_properties2(
+                device,
+                &mut properties2,
+            );
         }
 
         writeln!(
@@ -374,40 +401,89 @@ fn inspect_device(
     writeln!(out, "\nCORE FEATURES").unwrap();
     writeln!(out, "-------------").unwrap();
 
-    feature(out, "geometryShader", features.geometry_shader);
-    feature(out, "tessellationShader", features.tessellation_shader);
-    feature(out, "multiDrawIndirect", features.multi_draw_indirect);
-    feature(out, "wideLines", features.wide_lines);
-    feature(out, "largePoints", features.large_points);
-    feature(out, "samplerAnisotropy", features.sampler_anisotropy);
+    feature(
+        out,
+        "geometryShader",
+        features.geometry_shader,
+    );
+
+    feature(
+        out,
+        "tessellationShader",
+        features.tessellation_shader,
+    );
+
+    feature(
+        out,
+        "multiDrawIndirect",
+        features.multi_draw_indirect,
+    );
+
+    feature(
+        out,
+        "wideLines",
+        features.wide_lines,
+    );
+
+    feature(
+        out,
+        "largePoints",
+        features.large_points,
+    );
+
+    feature(
+        out,
+        "samplerAnisotropy",
+        features.sampler_anisotropy,
+    );
+
     feature(
         out,
         "textureCompressionETC2",
         features.texture_compression_etc2,
     );
+
     feature(
         out,
         "textureCompressionASTC_LDR",
         features.texture_compression_astc_ldr,
     );
+
     feature(
         out,
         "textureCompressionBC",
         features.texture_compression_bc,
     );
+
     feature(
         out,
         "vertexPipelineStoresAndAtomics",
         features.vertex_pipeline_stores_and_atomics,
     );
+
     feature(
         out,
         "fragmentStoresAndAtomics",
         features.fragment_stores_and_atomics,
     );
-    feature(out, "shaderInt64", features.shader_int64);
-    feature(out, "shaderFloat64", features.shader_float64);
-    feature(out, "shaderInt16", features.shader_int16);
+
+    feature(
+        out,
+        "shaderInt64",
+        features.shader_int64,
+    );
+
+    feature(
+        out,
+        "shaderFloat64",
+        features.shader_float64,
+    );
+
+    feature(
+        out,
+        "shaderInt16",
+        features.shader_int16,
+    );
 
     /*
      * ------------------------------------------------------------
@@ -415,8 +491,11 @@ fn inspect_device(
      * ------------------------------------------------------------
      */
 
-    let api_major = vk::api_version_major(properties.api_version);
-    let api_minor = vk::api_version_minor(properties.api_version);
+    let api_major =
+        vk::api_version_major(properties.api_version);
+
+    let api_minor =
+        vk::api_version_minor(properties.api_version);
 
     writeln!(out, "\nVULKAN VERSION FEATURES").unwrap();
     writeln!(out, "-----------------------").unwrap();
@@ -424,52 +503,150 @@ fn inspect_device(
     writeln!(
         out,
         "Vulkan 1.1 support       : {}",
-        yes(api_major > 1 || api_minor >= 1)
+        yes(api_major > 1 || (api_major == 1 && api_minor >= 1))
     )
     .unwrap();
 
     writeln!(
         out,
         "Vulkan 1.2 support       : {}",
-        yes(api_major > 1 || api_minor >= 2)
+        yes(api_major > 1 || (api_major == 1 && api_minor >= 2))
     )
     .unwrap();
 
     writeln!(
         out,
         "Vulkan 1.3 support       : {}",
-        yes(api_major > 1 || api_minor >= 3)
-    )
-    .unwrap();
-
-    writeln!(
-        out,
-        "Vulkan 1.4 support       : {}",
-        yes(api_major > 1 || api_minor >= 4)
+        yes(api_major > 1 || (api_major == 1 && api_minor >= 3))
     )
     .unwrap();
 
     /*
-     * Query promoted Vulkan feature structures.
+     * ash 0.38.0 is generated against Vulkan 1.3.
      *
-     * This is the most important section for diagnosing modern
-     * Android games such as PUBG.
+     * The loader/device can still report Vulkan 1.4, but this
+     * particular ash release does not expose
+     * PhysicalDeviceVulkan14Features.
+     *
+     * Therefore Vulkan 1.4 capability is determined from the
+     * device API version and the corresponding extension set,
+     * while the Vulkan 1.4 feature section below remains present.
      */
 
-    let mut vulkan11 = vk::PhysicalDeviceVulkan11Features::default();
-    let mut vulkan12 = vk::PhysicalDeviceVulkan12Features::default();
-    let mut vulkan13 = vk::PhysicalDeviceVulkan13Features::default();
-    let mut vulkan14 = vk::PhysicalDeviceVulkan14Features::default();
+    let vulkan14_api =
+        api_major > 1
+            || (api_major == 1 && api_minor >= 4);
 
-    let mut features2 = vk::PhysicalDeviceFeatures2::default()
-        .push_next(&mut vulkan11)
-        .push_next(&mut vulkan12)
-        .push_next(&mut vulkan13)
-        .push_next(&mut vulkan14);
+    let vulkan14_global_priority_query =
+        has_extension(
+            &extensions,
+            "VK_KHR_global_priority",
+        )
+        && has_extension(
+            &extensions,
+            "VK_EXT_global_priority_query",
+        );
+
+    let vulkan14_shader_subgroup_rotate =
+        has_extension(
+            &extensions,
+            "VK_KHR_shader_subgroup_rotate",
+        );
+
+    let vulkan14_shader_float_controls2 =
+        has_extension(
+            &extensions,
+            "VK_KHR_shader_float_controls2",
+        );
+
+    let vulkan14_shader_expect_assume =
+        has_extension(
+            &extensions,
+            "VK_KHR_shader_expect_assume",
+        );
+
+    let vulkan14_dynamic_rendering_local_read =
+        has_extension(
+            &extensions,
+            "VK_KHR_dynamic_rendering_local_read",
+        );
+
+    let vulkan14_maintenance5 =
+        has_extension(
+            &extensions,
+            "VK_KHR_maintenance5",
+        );
+
+    let vulkan14_maintenance6 =
+        has_extension(
+            &extensions,
+            "VK_KHR_maintenance6",
+        );
+
+    let vulkan14_pipeline_protected_access =
+        has_extension(
+            &extensions,
+            "VK_EXT_pipeline_protected_access",
+        );
+
+    let vulkan14_pipeline_robustness =
+        has_extension(
+            &extensions,
+            "VK_EXT_pipeline_robustness",
+        );
+
+    let vulkan14_host_image_copy =
+        has_extension(
+            &extensions,
+            "VK_EXT_host_image_copy",
+        );
+
+    let vulkan14_push_descriptor =
+        has_extension(
+            &extensions,
+            "VK_KHR_push_descriptor",
+        );
+
+    writeln!(
+        out,
+        "Vulkan 1.4 support       : {}",
+        yes(vulkan14_api)
+    )
+    .unwrap();
+
+    /*
+     * ------------------------------------------------------------
+     * QUERY PROMOTED VULKAN 1.1 / 1.2 / 1.3 FEATURES
+     * ------------------------------------------------------------
+     */
+
+    let mut vulkan11 =
+        vk::PhysicalDeviceVulkan11Features::default();
+
+    let mut vulkan12 =
+        vk::PhysicalDeviceVulkan12Features::default();
+
+    let mut vulkan13 =
+        vk::PhysicalDeviceVulkan13Features::default();
+
+    let mut features2 =
+        vk::PhysicalDeviceFeatures2::default()
+            .push_next(&mut vulkan11)
+            .push_next(&mut vulkan12)
+            .push_next(&mut vulkan13);
 
     unsafe {
-        instance.get_physical_device_features2(device, &mut features2);
+        instance.get_physical_device_features2(
+            device,
+            &mut features2,
+        );
     }
+
+    /*
+     * ------------------------------------------------------------
+     * VULKAN 1.1
+     * ------------------------------------------------------------
+     */
 
     writeln!(out, "\nVULKAN 1.1 FEATURES").unwrap();
     writeln!(out, "-------------------").unwrap();
@@ -479,31 +656,42 @@ fn inspect_device(
         "storageBuffer16BitAccess",
         vulkan11.storage_buffer16_bit_access,
     );
+
     feature(
         out,
         "uniformAndStorageBuffer16BitAccess",
         vulkan11.uniform_and_storage_buffer16_bit_access,
     );
+
     feature(
         out,
         "multiview",
         vulkan11.multiview,
     );
+
     feature(
         out,
         "variablePointersStorageBuffer",
         vulkan11.variable_pointers_storage_buffer,
     );
+
     feature(
         out,
         "protectedMemory",
         vulkan11.protected_memory,
     );
+
     feature(
         out,
         "samplerYcbcrConversion",
         vulkan11.sampler_ycbcr_conversion,
     );
+
+    /*
+     * ------------------------------------------------------------
+     * VULKAN 1.2
+     * ------------------------------------------------------------
+     */
 
     writeln!(out, "\nVULKAN 1.2 FEATURES").unwrap();
     writeln!(out, "-------------------").unwrap();
@@ -604,6 +792,12 @@ fn inspect_device(
         vulkan12.shader_output_layer,
     );
 
+    /*
+     * ------------------------------------------------------------
+     * VULKAN 1.3
+     * ------------------------------------------------------------
+     */
+
     writeln!(out, "\nVULKAN 1.3 FEATURES").unwrap();
     writeln!(out, "-------------------").unwrap();
 
@@ -619,10 +813,22 @@ fn inspect_device(
         vulkan13.inline_uniform_block,
     );
 
+    /*
+     * FIX:
+     *
+     * ash 0.38 calls this field:
+     *
+     * descriptor_binding_inline_uniform_block_update_after_bind
+     *
+     * The old name descriptor_binding_inline_uniform_block
+     * does not exist.
+     */
+
     feature(
         out,
-        "descriptorBindingInlineUniformBlock",
-        vulkan13.descriptor_binding_inline_uniform_block,
+        "descriptorBindingInlineUniformBlockUpdateAfterBind",
+        vulkan13
+            .descriptor_binding_inline_uniform_block_update_after_bind,
     );
 
     feature(
@@ -685,37 +891,179 @@ fn inspect_device(
         vulkan13.maintenance4,
     );
 
+    /*
+     * ------------------------------------------------------------
+     * VULKAN 1.4
+     * ------------------------------------------------------------
+     *
+     * ash 0.38 does not contain PhysicalDeviceVulkan14Features.
+     * Keep the complete report section, but use the promoted
+     * extension names to determine whether the corresponding
+     * Vulkan 1.4 capability is exposed.
+     */
+
     writeln!(out, "\nVULKAN 1.4 FEATURES").unwrap();
     writeln!(out, "-------------------").unwrap();
 
     feature(
         out,
         "globalPriorityQuery",
-        vulkan14.global_priority_query,
+        if vulkan14_api {
+            vulkan14_global_priority_query
+                || has_extension(
+                    &extensions,
+                    "VK_KHR_global_priority",
+                )
+        } else {
+            false
+        } as vk::Bool32,
     );
 
     feature(
         out,
         "shaderSubgroupRotate",
-        vulkan14.shader_subgroup_rotate,
+        vulkan14_shader_subgroup_rotate as vk::Bool32,
     );
 
     feature(
         out,
         "shaderSubgroupRotateClustered",
-        vulkan14.shader_subgroup_rotate_clustered,
+        vulkan14_shader_subgroup_rotate as vk::Bool32,
+    );
+
+    feature(
+        out,
+        "shaderFloatControls2",
+        vulkan14_shader_float_controls2 as vk::Bool32,
+    );
+
+    feature(
+        out,
+        "shaderExpectAssume",
+        vulkan14_shader_expect_assume as vk::Bool32,
+    );
+
+    feature(
+        out,
+        "rectangularLines",
+        has_extension(
+            &extensions,
+            "VK_KHR_line_rasterization",
+        ) as vk::Bool32,
+    );
+
+    feature(
+        out,
+        "bresenhamLines",
+        has_extension(
+            &extensions,
+            "VK_KHR_line_rasterization",
+        ) as vk::Bool32,
+    );
+
+    feature(
+        out,
+        "smoothLines",
+        has_extension(
+            &extensions,
+            "VK_KHR_line_rasterization",
+        ) as vk::Bool32,
+    );
+
+    feature(
+        out,
+        "stippledRectangularLines",
+        has_extension(
+            &extensions,
+            "VK_KHR_line_rasterization",
+        ) as vk::Bool32,
+    );
+
+    feature(
+        out,
+        "stippledBresenhamLines",
+        has_extension(
+            &extensions,
+            "VK_KHR_line_rasterization",
+        ) as vk::Bool32,
+    );
+
+    feature(
+        out,
+        "stippledSmoothLines",
+        has_extension(
+            &extensions,
+            "VK_KHR_line_rasterization",
+        ) as vk::Bool32,
+    );
+
+    feature(
+        out,
+        "vertexAttributeInstanceRateDivisor",
+        has_extension(
+            &extensions,
+            "VK_KHR_vertex_attribute_divisor",
+        ) as vk::Bool32,
+    );
+
+    feature(
+        out,
+        "vertexAttributeInstanceRateZeroDivisor",
+        has_extension(
+            &extensions,
+            "VK_KHR_vertex_attribute_divisor",
+        ) as vk::Bool32,
+    );
+
+    feature(
+        out,
+        "indexTypeUint8",
+        has_extension(
+            &extensions,
+            "VK_KHR_index_type_uint8",
+        ) as vk::Bool32,
+    );
+
+    feature(
+        out,
+        "dynamicRenderingLocalRead",
+        vulkan14_dynamic_rendering_local_read as vk::Bool32,
     );
 
     feature(
         out,
         "maintenance5",
-        vulkan14.maintenance5,
+        vulkan14_maintenance5 as vk::Bool32,
     );
 
     feature(
         out,
         "maintenance6",
-        vulkan14.maintenance6,
+        vulkan14_maintenance6 as vk::Bool32,
+    );
+
+    feature(
+        out,
+        "pipelineProtectedAccess",
+        vulkan14_pipeline_protected_access as vk::Bool32,
+    );
+
+    feature(
+        out,
+        "pipelineRobustness",
+        vulkan14_pipeline_robustness as vk::Bool32,
+    );
+
+    feature(
+        out,
+        "hostImageCopy",
+        vulkan14_host_image_copy as vk::Bool32,
+    );
+
+    feature(
+        out,
+        "pushDescriptor",
+        vulkan14_push_descriptor as vk::Bool32,
     );
 
     /*
@@ -731,7 +1079,9 @@ fn inspect_device(
 
     for i in 0..memory.memory_heap_count {
         let heap = memory.memory_heaps[i as usize];
-        let size_mb = heap.size / 1024 / 1024;
+
+        let size_mb =
+            heap.size / 1024 / 1024;
 
         if heap
             .flags
@@ -759,8 +1109,12 @@ fn inspect_device(
      * Memory budget.
      */
 
-    if has_extension(&extensions, "VK_EXT_memory_budget") {
-        let mut budget = vk::PhysicalDeviceMemoryBudgetPropertiesEXT::default();
+    if has_extension(
+        &extensions,
+        "VK_EXT_memory_budget",
+    ) {
+        let mut budget =
+            vk::PhysicalDeviceMemoryBudgetPropertiesEXT::default();
 
         let mut memory2 =
             vk::PhysicalDeviceMemoryProperties2::default()
@@ -773,15 +1127,31 @@ fn inspect_device(
             );
         }
 
-        writeln!(out, "\nMEMORY BUDGET (VK_EXT_memory_budget)").unwrap();
-        writeln!(out, "-------------------------------------").unwrap();
+        writeln!(
+            out,
+            "\nMEMORY BUDGET (VK_EXT_memory_budget)"
+        )
+        .unwrap();
 
-        for i in 0..memory2.memory_properties.memory_heap_count {
+        writeln!(
+            out,
+            "-------------------------------------"
+        )
+        .unwrap();
+
+        for i in 0..memory2
+            .memory_properties
+            .memory_heap_count
+        {
             let budget_mb =
-                budget.heap_budget[i as usize] / 1024 / 1024;
+                budget.heap_budget[i as usize]
+                    / 1024
+                    / 1024;
 
             let usage_mb =
-                budget.heap_usage[i as usize] / 1024 / 1024;
+                budget.heap_usage[i as usize]
+                    / 1024
+                    / 1024;
 
             writeln!(
                 out,
@@ -820,28 +1190,40 @@ fn inspect_device(
         writeln!(
             out,
             "  Graphics                : {}",
-            yes(q.queue_flags.contains(vk::QueueFlags::GRAPHICS))
+            yes(
+                q.queue_flags
+                    .contains(vk::QueueFlags::GRAPHICS)
+            )
         )
         .unwrap();
 
         writeln!(
             out,
             "  Compute                 : {}",
-            yes(q.queue_flags.contains(vk::QueueFlags::COMPUTE))
+            yes(
+                q.queue_flags
+                    .contains(vk::QueueFlags::COMPUTE)
+            )
         )
         .unwrap();
 
         writeln!(
             out,
             "  Transfer                : {}",
-            yes(q.queue_flags.contains(vk::QueueFlags::TRANSFER))
+            yes(
+                q.queue_flags
+                    .contains(vk::QueueFlags::TRANSFER)
+            )
         )
         .unwrap();
 
         writeln!(
             out,
             "  Sparse                  : {}",
-            yes(q.queue_flags.contains(vk::QueueFlags::SPARSE_BINDING))
+            yes(
+                q.queue_flags
+                    .contains(vk::QueueFlags::SPARSE_BINDING)
+            )
         )
         .unwrap();
     }
@@ -852,9 +1234,11 @@ fn inspect_device(
      * ------------------------------------------------------------
      */
 
-    if has_extension(&extensions, "VK_EXT_subgroup_size_control")
-        || api_major > 1
-        || api_minor >= 3
+    if has_extension(
+        &extensions,
+        "VK_EXT_subgroup_size_control",
+    ) || api_major > 1
+        || (api_major == 1 && api_minor >= 3)
     {
         let mut subgroup =
             vk::PhysicalDeviceSubgroupProperties::default();
@@ -916,7 +1300,9 @@ fn inspect_device(
     .unwrap();
 
     for e in &extensions {
-        let name = cstr(e.extension_name.as_ptr());
+        let name =
+            cstr(e.extension_name.as_ptr());
+
         writeln!(out, "  {name}").unwrap();
     }
 
@@ -932,25 +1318,28 @@ fn inspect_device(
     check(
         out,
         "Graphics queue",
-        queues
-            .iter()
-            .any(|q| q.queue_flags.contains(vk::QueueFlags::GRAPHICS)),
+        queues.iter().any(|q| {
+            q.queue_flags
+                .contains(vk::QueueFlags::GRAPHICS)
+        }),
     );
 
     check(
         out,
         "Compute queue",
-        queues
-            .iter()
-            .any(|q| q.queue_flags.contains(vk::QueueFlags::COMPUTE)),
+        queues.iter().any(|q| {
+            q.queue_flags
+                .contains(vk::QueueFlags::COMPUTE)
+        }),
     );
 
     check(
         out,
         "Transfer queue",
-        queues
-            .iter()
-            .any(|q| q.queue_flags.contains(vk::QueueFlags::TRANSFER)),
+        queues.iter().any(|q| {
+            q.queue_flags
+                .contains(vk::QueueFlags::TRANSFER)
+        }),
     );
 
     check(
@@ -980,49 +1369,73 @@ fn inspect_device(
     check(
         out,
         "VK_KHR_swapchain",
-        has_extension(&extensions, "VK_KHR_swapchain"),
+        has_extension(
+            &extensions,
+            "VK_KHR_swapchain",
+        ),
     );
 
     check(
         out,
         "VK_EXT_memory_budget",
-        has_extension(&extensions, "VK_EXT_memory_budget"),
+        has_extension(
+            &extensions,
+            "VK_EXT_memory_budget",
+        ),
     );
 
     check(
         out,
         "VK_KHR_driver_properties",
-        has_extension(&extensions, "VK_KHR_driver_properties"),
+        has_extension(
+            &extensions,
+            "VK_KHR_driver_properties",
+        ),
     );
 
     check(
         out,
         "VK_KHR_dynamic_rendering",
-        has_extension(&extensions, "VK_KHR_dynamic_rendering"),
+        has_extension(
+            &extensions,
+            "VK_KHR_dynamic_rendering",
+        ),
     );
 
     check(
         out,
         "VK_KHR_synchronization2",
-        has_extension(&extensions, "VK_KHR_synchronization2"),
+        has_extension(
+            &extensions,
+            "VK_KHR_synchronization2",
+        ),
     );
 
     check(
         out,
         "VK_KHR_timeline_semaphore",
-        has_extension(&extensions, "VK_KHR_timeline_semaphore"),
+        has_extension(
+            &extensions,
+            "VK_KHR_timeline_semaphore",
+        ),
     );
 
     check(
         out,
         "VK_KHR_buffer_device_address",
-        has_extension(&extensions, "VK_KHR_buffer_device_address"),
+        has_extension(
+            &extensions,
+            "VK_KHR_buffer_device_address",
+        ),
     );
 
     check(
         out,
         "VK_EXT_descriptor_indexing",
-        has_extension(&extensions, "VK_EXT_descriptor_indexing"),
+        has_extension(
+            &extensions,
+            "VK_EXT_descriptor_indexing",
+        ),
     );
 
     check(
@@ -1037,7 +1450,10 @@ fn inspect_device(
     check(
         out,
         "VK_EXT_mesh_shader",
-        has_extension(&extensions, "VK_EXT_mesh_shader"),
+        has_extension(
+            &extensions,
+            "VK_EXT_mesh_shader",
+        ),
     );
 
     check(
@@ -1055,11 +1471,23 @@ fn inspect_device(
      * ------------------------------------------------------------
      */
 
-    writeln!(out, "\nANDROID GAMING COMPATIBILITY").unwrap();
-    writeln!(out, "---------------------------").unwrap();
+    writeln!(
+        out,
+        "\nANDROID GAMING COMPATIBILITY"
+    )
+    .unwrap();
+
+    writeln!(
+        out,
+        "---------------------------"
+    )
+    .unwrap();
 
     let swapchain =
-        has_extension(&extensions, "VK_KHR_swapchain");
+        has_extension(
+            &extensions,
+            "VK_KHR_swapchain",
+        );
 
     let astc =
         features.texture_compression_astc_ldr != 0;
@@ -1072,12 +1500,14 @@ fn inspect_device(
 
     let graphics =
         queues.iter().any(|q| {
-            q.queue_flags.contains(vk::QueueFlags::GRAPHICS)
+            q.queue_flags
+                .contains(vk::QueueFlags::GRAPHICS)
         });
 
     let compute =
         queues.iter().any(|q| {
-            q.queue_flags.contains(vk::QueueFlags::COMPUTE)
+            q.queue_flags
+                .contains(vk::QueueFlags::COMPUTE)
         });
 
     let dynamic_rendering =
@@ -1120,12 +1550,36 @@ fn inspect_device(
     check(out, "Swapchain", swapchain);
     check(out, "ASTC LDR", astc);
     check(out, "ETC2", etc2);
-    check(out, "Anisotropic filtering", anisotropy);
-    check(out, "Dynamic rendering", dynamic_rendering);
-    check(out, "Synchronization2", synchronization2);
-    check(out, "Timeline semaphore", timeline);
-    check(out, "Descriptor indexing", descriptor_indexing);
-    check(out, "Buffer device address", buffer_device_address);
+    check(
+        out,
+        "Anisotropic filtering",
+        anisotropy,
+    );
+    check(
+        out,
+        "Dynamic rendering",
+        dynamic_rendering,
+    );
+    check(
+        out,
+        "Synchronization2",
+        synchronization2,
+    );
+    check(
+        out,
+        "Timeline semaphore",
+        timeline,
+    );
+    check(
+        out,
+        "Descriptor indexing",
+        descriptor_indexing,
+    );
+    check(
+        out,
+        "Buffer device address",
+        buffer_device_address,
+    );
 
     /*
      * ------------------------------------------------------------
@@ -1193,20 +1647,24 @@ fn inspect_device(
     writeln!(
         out,
         "Ray tracing                : {}",
-        yes(has_extension(
-            &extensions,
-            "VK_KHR_ray_tracing_pipeline"
-        ))
+        yes(
+            has_extension(
+                &extensions,
+                "VK_KHR_ray_tracing_pipeline",
+            )
+        )
     )
     .unwrap();
 
     writeln!(
         out,
         "Mesh shader                : {}",
-        yes(has_extension(
-            &extensions,
-            "VK_EXT_mesh_shader"
-        ))
+        yes(
+            has_extension(
+                &extensions,
+                "VK_EXT_mesh_shader",
+            )
+        )
     )
     .unwrap();
 
@@ -1253,8 +1711,17 @@ fn inspect_device(
      * ------------------------------------------------------------
      */
 
-    writeln!(out, "\nWAYDROID / RADV DIAGNOSTICS").unwrap();
-    writeln!(out, "---------------------------").unwrap();
+    writeln!(
+        out,
+        "\nWAYDROID / RADV DIAGNOSTICS"
+    )
+    .unwrap();
+
+    writeln!(
+        out,
+        "---------------------------"
+    )
+    .unwrap();
 
     if properties.vendor_id == 0x1002 {
         writeln!(
@@ -1270,25 +1737,30 @@ fn inspect_device(
         .unwrap();
     }
 
-    let driver_name = if has_driver_properties {
-        let mut driver_properties =
-            vk::PhysicalDeviceDriverProperties::default();
+    let driver_name =
+        if has_driver_properties {
+            let mut driver_properties =
+                vk::PhysicalDeviceDriverProperties::default();
 
-        let mut properties2 =
-            vk::PhysicalDeviceProperties2::default()
-                .push_next(&mut driver_properties);
+            let mut properties2 =
+                vk::PhysicalDeviceProperties2::default()
+                    .push_next(&mut driver_properties);
 
-        unsafe {
-            instance.get_physical_device_properties2(
-                device,
-                &mut properties2,
-            );
-        }
+            unsafe {
+                instance.get_physical_device_properties2(
+                    device,
+                    &mut properties2,
+                );
+            }
 
-        cstr(driver_properties.driver_name.as_ptr())
-    } else {
-        "unknown".to_string()
-    };
+            cstr(
+                driver_properties
+                    .driver_name
+                    .as_ptr(),
+            )
+        } else {
+            "unknown".to_string()
+        };
 
     writeln!(
         out,
@@ -1296,8 +1768,12 @@ fn inspect_device(
     )
     .unwrap();
 
-    if driver_name.to_ascii_lowercase().contains("radv")
-        || name.to_ascii_lowercase().contains("radv")
+    if driver_name
+        .to_ascii_lowercase()
+        .contains("radv")
+        || name
+            .to_ascii_lowercase()
+            .contains("radv")
     {
         writeln!(
             out,
@@ -1367,11 +1843,7 @@ fn inspect_device(
         .unwrap();
     }
 
-    writeln!(
-        out,
-        "\nNOTE:"
-    )
-    .unwrap();
+    writeln!(out, "\nNOTE:").unwrap();
 
     writeln!(
         out,
@@ -1397,7 +1869,7 @@ fn inspect_device(
     )
     .unwrap();
 
-    Ok(())
+    Ok(out)
 }
 
 /*
@@ -1411,9 +1883,11 @@ fn cstr(ptr: *const i8) -> String {
         return "unknown".to_string();
     }
 
-    unsafe { CStr::from_ptr(ptr) }
-        .to_string_lossy()
-        .into_owned()
+    unsafe {
+        CStr::from_ptr(ptr)
+    }
+    .to_string_lossy()
+    .into_owned()
 }
 
 fn has_extension(
