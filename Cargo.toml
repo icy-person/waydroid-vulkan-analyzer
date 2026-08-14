@@ -1,0 +1,12 @@
+[package]
+name = "waydroid-vulkan-analyzer"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "waydroid_vulkan_analyzer"
+crate-type = ["cdylib"]
+
+[dependencies]
+ash = "0.38"
+jni = "0.21"
