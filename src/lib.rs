@@ -3,9 +3,9 @@ use jni::{objects::{JClass, JString}, JNIEnv};
 use std::ffi::{CStr, CString};
 use std::fmt::Write as _;
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "system" fn Java_com_example_waydroidvulkan_MainActivity_getVulkanReport(
-    mut env: JNIEnv,
+    env: JNIEnv,
     _class: JClass,
 ) -> JString<'static> {
     let report = match inspect_vulkan() {
@@ -156,7 +156,7 @@ fn inspect_device(
     }
 
     writeln!(out, "\nDEVICE EXTENSIONS ({})", extensions.len()).unwrap();
-    for e in extensions {
+    for e in &extensions {
         let name = unsafe { CStr::from_ptr(e.extension_name.as_ptr()) }.to_string_lossy();
         writeln!(out, "  {name}").unwrap();
     }
