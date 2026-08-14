@@ -1869,7 +1869,7 @@ fn inspect_device(
     )
     .unwrap();
 
-    Ok(out)
+    Ok(())
 }
 
 /*
