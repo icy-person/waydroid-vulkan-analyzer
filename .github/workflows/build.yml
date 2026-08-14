@@ -1,0 +1,78 @@
+name: Build Waydroid Vulkan Analyzer
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  NDK_VERSION: "29.0.13113456"
+  ANDROID_PLATFORM: "24"
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK and NDK
+        run: |
+          sdkmanager "platform-tools" "platforms;android-36" "build-tools;35.0.0" "ndk;${NDK_VERSION}"
+          echo "ANDROID_NDK_HOME=${ANDROID_SDK_ROOT}/ndk/${NDK_VERSION}" >> "$GITHUB_ENV"
+
+      - name: Setup Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+          target: x86_64-linux-android
+
+      - name: Install cargo-ndk
+        run: cargo install cargo-ndk --version 4.1.2 --locked
+
+      - name: Build Rust JNI library
+        run: |
+          rm -rf android/app/src/main/jniLibs
+          mkdir -p android/app/src/main/jniLibs
+          cargo ndk \
+            -t x86_64 \
+            -p ${ANDROID_PLATFORM} \
+            -o android/app/src/main/jniLibs \
+            build --release
+
+      - name: Verify native library
+        run: |
+          find android/app/src/main/jniLibs -type f -print
+          file android/app/src/main/jniLibs/x86_64/libwaydroid_vulkan_analyzer.so
+
+      - name: Build APK
+        working-directory: android
+        run: gradle --no-daemon --stacktrace assembleDebug
+
+      - name: Rename APK
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk waydroid-vulkan-analyzer-debug.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: waydroid-vulkan-analyzer-debug
+          path: waydroid-vulkan-analyzer-debug.apk
+          if-no-files-found: error
+
+      - name: Upload native library
+        uses: actions/upload-artifact@v4
+        with:
+          name: waydroid-vulkan-analyzer-x86_64-so
+          path: android/app/src/main/jniLibs/x86_64/libwaydroid_vulkan_analyzer.so
+          if-no-files-found: error
