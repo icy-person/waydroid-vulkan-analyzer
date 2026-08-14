@@ -50,14 +50,10 @@ jobs:
 
       - name: Build Rust JNI library
         run: |
-          rm -rf android/app/src/main/jniLibs
-          mkdir -p android/app/src/main/jniLibs
-          cargo ndk \
-            -t x86_64 \
-            -P ${ANDROID_PLATFORM} \
-            -o android/app/src/main/jniLibs \
-            build --release
-
+            rm -rf android/app/src/main/jniLibs
+            mkdir -p android/app/src/main/jniLibs
+            cargo ndk -t x86_64 -P "${ANDROID_PLATFORM}" -o android/app/src/main/jniLibs build --release
+    
       - name: Verify native library
         run: |
           find android/app/src/main/jniLibs -type f -print
